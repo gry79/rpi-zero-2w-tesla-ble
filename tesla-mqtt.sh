@@ -12,6 +12,11 @@ function ctrl_c() {
 }
 
 mosquitto_pub -h "${MQTT_BROKER}" -t "tesla/command/info" -m "{ \"ip\": \"$(ifconfig wlan0 2>/dev/null | grep "inet " | awk '{print $2}')\", \"hostname\": \"$(hostname -f)\", \"model\":\"$(tr -d '\0' </proc/device-tree/model)\" }"
+if [ "$?" -ne "0" ]; then
+    echo "ERROR sending message to MQTT broker, exiting"
+    sleep 5
+    exit 1
+fi
 
 while true  # Keep an infinite loop to reconnect when connection lost/broker unavailable
 do
