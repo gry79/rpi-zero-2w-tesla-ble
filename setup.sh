@@ -2,15 +2,20 @@
 
 GO_VERSION=1.23.0
 ARCH=arm64
-SHELL_RC="$HOME/.bashrc"
 
-TESLA_BIN_DIR=/home/pi/bin/tesla
+TESLA_BIN_DIR=${HOME}/bin/tesla
+GIT_REPO_DIR=${HOME}/git
 
 # Fail script if any command fails
 set -e
 
 read -p "Enter Tesla VIN: " TESLA_VIN
 read -p "Enter MQTT Broker host/ip: " MQTT_BROKER
+
+if [ "${#TESLA_VIN}" -ne "17" ]; then
+    echo "ERROR: Invalid VIN, must be 17 characters long"
+    exit 1
+fi
 
 echo "Tesla VIN is ${TESLA_VIN}"
 echo "MQTT Broker is ${MQTT_BROKER}"
@@ -28,6 +33,9 @@ LC_ALL=en_GB.UTF-8
 LANGUAGE=en_GB.UTF-8
 EOT
 source /etc/default/locale
+export LANG=en_GB.UTF-8
+export LC_ALL=en_GB.UTF-8
+export LANGUAGE=en_GB.UTF-8
 
 echo "### Updating system and install needed dependencies"
 sudo apt update
@@ -49,25 +57,26 @@ sudo dphys-swapfile swapon
 echo "### Installing GoLang ${GO_VERSION}"
 cd ~
 wget https://dl.google.com/go/go${GO_VERSION}.linux-${ARCH}.tar.gz
-mkdir -p ~/.local/share
-tar -C ~/.local/share -xzf go${GO_VERSION}.linux-${ARCH}.tar.gz
-echo >> "${SHELL_RC}"
-echo 'export GOPATH=$HOME/.local/share/go' >> "${SHELL_RC}"
-echo 'export PATH=$HOME/.local/share/go/bin:/home/pi/bin/tesla:$PATH' >> "${SHELL_RC}"
+mkdir -p $HOME/.local/share
+tar -C $HOME/.local/share -xzf go${GO_VERSION}.linux-${ARCH}.tar.gz
+echo >> "${HOME}/.bashrc"
+echo 'export GOPATH=$HOME/.local/share/go' >> "${HOME}/.bashrc"
+echo 'export PATH=$HOME/.local/share/go/bin:/home/pi/bin/tesla:$PATH' >> "${HOME}/.bashrc"
 
-source ${SHELL_RC}
+source ${HOME}/.bashrc
 
 echo "### Checkout Tesla vehicle-command project from GitHub"
-mkdir -p ~/git
-cd ~/git
+mkdir -p ${GIT_REPO_DIR}
+cd ${GIT_REPO_DIR}
 git clone https://github.com/teslamotors/vehicle-command.git
 
 echo "### Compiling tesla-control"
-cd ~/git/vehicle-command/cmd/tesla-control
+cd ${GIT_REPO_DIR}/vehicle-command/cmd/tesla-control
 go build
-mkdir -p ~/bin/tesla
-cp tesla-control ~/bin/tesla/
-cd ~/bin/tesla
+mkdir -p ${TESLA_BIN_DIR}
+cp tesla-control ${TESLA_BIN_DIR}
+rm -rf ${GIT_REPO_DIR}
+cd ${TESLA_BIN_DIR}
 
 echo "### Creating keypair needed for Tesla vehicle"
 openssl ecparam -genkey -name prime256v1 -noout > private.pem
@@ -80,7 +89,7 @@ chmod 0755 ${TESLA_BIN_DIR}/tesla-mqtt.sh
 tee ${TESLA_BIN_DIR}/tesla-mqtt.properties > /dev/null <<EOT
 TESLA_VIN=${TESLA_VIN}
 MQTT_BROKER=${MQTT_BROKER}
-TOPIC_ID=$(hostname)
+TOPIC_ID=${TESLA_VIN}
 EOT
 
 echo "### Allowing tesla-control binary to access Bluetooth"
@@ -105,9 +114,9 @@ After=network.target network-online.target
 
 [Service]
 Type=simple
-User=pi
-WorkingDirectory=/home/pi
-ExecStart=/home/pi/bin/tesla/tesla-mqtt.sh
+User=$(whoami)
+WorkingDirectory=${HOME}
+ExecStart=${TESLA_BIN_DIR}/tesla-mqtt.sh
 Restart=always
 RestartSec=5
 
