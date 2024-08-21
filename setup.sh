@@ -9,6 +9,18 @@ TESLA_BIN_DIR=/home/pi/bin/tesla
 # Fail script if any command fails
 set -e
 
+read -p "Enter Tesla VIN: " TESLA_VIN
+read -p "Enter MQTT Broker host/ip: " MQTT_BROKER
+
+echo "Tesla VIN is ${TESLA_VIN}"
+echo "MQTT Broker is ${MQTT_BROKER}"
+read -p "Is this correct? [y/n] " YES_NO
+
+if [ "${YES_NO}" != "y" ]; then
+    echo "ERROR: Entered data wrong, exiting!"
+    exit 1
+fi
+
 echo "### Fixing locale file"
 sudo tee /etc/default/locale > /dev/null <<EOT
 LANG=en_GB.UTF-8
@@ -66,8 +78,9 @@ curl -o ${TESLA_BIN_DIR}/tesla-mqtt.sh https://raw.githubusercontent.com/gry79/r
 chmod 0755 ${TESLA_BIN_DIR}/tesla-mqtt.sh
 
 tee ${TESLA_BIN_DIR}/tesla-mqtt.properties > /dev/null <<EOT
-TESLA_VIN=XXXXXXXXXXXXXXXXX
-MQTT_BROKER=192.168.1.100
+TESLA_VIN=${TESLA_VIN}
+MQTT_BROKER=${MQTT_BROKER}
+TOPIC_ID=$(hostname)
 EOT
 
 echo "### Allowing tesla-control binary to access Bluetooth"
@@ -116,6 +129,14 @@ EOT
 crontab /tmp/c1
 rm -f /tmp/c1
 
+echo "### Setting boot partition read-only to prevent SD card failure"
+sudo awk '$2~"^/boot/firmware$" && $4~"^defaults$"{$4=$4",ro"}1' OFS="\t" /etc/fstab > /tmp/fstab
+sudo mv -f /tmp/fstab /etc/fstab
+
+echo "### Enabling systemd unit file"
+sudo systemctl enable tesla-mqtt.service
+sudo systemctl start tesla-mqtt.service
+
 echo "### Activating overlay filesystem to make SD card read-only to prevent failure"
 sudo raspi-config nonint do_overlayfs 0
 
@@ -125,6 +146,6 @@ sudo rm -f /var/backups/*.gz
 sudo apt clean
 history -c && history -w
 
-echo "### All done, rebooting in 5 seconds"
+echo "### SUCCESS all done, rebooting in 5 seconds"
 sleep 5
 sudo reboot
