@@ -4,6 +4,8 @@ GO_VERSION=1.23.0
 ARCH=arm64
 SHELL_RC="$HOME/.bashrc"
 
+TESLA_BIN_DIR=/home/pi/bin/tesla
+
 # Fail script if any command fails
 set -e
 
@@ -39,7 +41,7 @@ mkdir -p ~/.local/share
 tar -C ~/.local/share -xzf go${GO_VERSION}.linux-${ARCH}.tar.gz
 echo >> "${SHELL_RC}"
 echo 'export GOPATH=$HOME/.local/share/go' >> "${SHELL_RC}"
-echo 'export PATH=$HOME/.local/share/go/bin:$HOME/bin/tesla:$PATH' >> "${SHELL_RC}"
+echo 'export PATH=$HOME/.local/share/go/bin:/home/pi/bin/tesla:$PATH' >> "${SHELL_RC}"
 
 source ${SHELL_RC}
 
@@ -60,11 +62,16 @@ openssl ecparam -genkey -name prime256v1 -noout > private.pem
 openssl ec -in private.pem -pubout > public.pem
 
 echo "### Downloading MQTT wrapper script"
-curl -o ~/bin/tesla/tesla-mqtt.sh https://raw.githubusercontent.com/gry79/rip-zero-2w-tesla-ble/main/tesla-mqtt.sh -L
-chmod 0755 ~/bin/tesla/tesla-mqtt.sh
+curl -o ${TESLA_BIN_DIR}/tesla-mqtt.sh https://raw.githubusercontent.com/gry79/rip-zero-2w-tesla-ble/main/tesla-mqtt.sh -L
+chmod 0755 ${TESLA_BIN_DIR}/tesla-mqtt.sh
+
+tee ${TESLA_BIN_DIR}/tesla-mqtt.properties > /dev/null <<EOT
+TESLA_VIN=XXXXXXXXXXXXXXXXX
+MQTT_BROKER=192.168.1.100
+EOT
 
 echo "### Allowing tesla-control binary to access Bluetooth"
-sudo setcap 'cap_net_admin=eip' "/home/pi/bin/tesla/tesla-control"
+sudo setcap 'cap_net_admin=eip' "${TESLA_BIN_DIR}/tesla-control"
 
 echo "### Disabling Swap"
 sudo systemctl stop dphys-swapfile.service

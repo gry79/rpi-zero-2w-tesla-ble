@@ -3,8 +3,8 @@
 trap ctrl_c INT
 
 TESLA_BIN_DIR=/home/pi/bin/tesla
-TESLA_VIN=XXXXXXXXXXXXXXXXX
-MQTT_BROKER=192.168.1.100
+
+source ${TESLA_BIN_DIR}/tesla-mqtt.properties
 
 function ctrl_c() {
     echo "Exiting!"
