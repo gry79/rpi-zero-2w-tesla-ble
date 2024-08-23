@@ -75,12 +75,17 @@ cd ${GIT_REPO_DIR}/vehicle-command/cmd/tesla-control
 go build
 mkdir -p ${TESLA_BIN_DIR}
 cp tesla-control ${TESLA_BIN_DIR}
-rm -rf ${GIT_REPO_DIR}
 cd ${TESLA_BIN_DIR}
+rm -rf ${GIT_REPO_DIR}
 
-echo "### Creating keypair needed for Tesla vehicle"
-openssl ecparam -genkey -name prime256v1 -noout > private.pem
-openssl ec -in private.pem -pubout > public.pem
+if [ ! -f private.pem ]; then
+    echo "### Creating private key needed for Tesla vehicle"
+    openssl ecparam -genkey -name prime256v1 -noout > private.pem
+fi
+if [ ! -f public.pem ]; then
+    echo "### Creating public key needed for Tesla vehicle"
+    openssl ec -in private.pem -pubout > public.pem
+fi
 
 echo "### Downloading MQTT wrapper script"
 curl -o ${TESLA_BIN_DIR}/tesla-mqtt.sh https://raw.githubusercontent.com/gry79/rip-zero-2w-tesla-ble/main/tesla-mqtt.sh -L
