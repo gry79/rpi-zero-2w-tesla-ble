@@ -43,8 +43,10 @@ sudo apt upgrade -y
 sudo apt install mc git jq build-essential mosquitto-clients -y
 sudo apt install libavahi-compat-libdnssd-dev avahi-utils -y
 
-echo "### Creating user keypair"
-yes '' | ssh-keygen -t rsa -N '' > /dev/null
+if [ ! -f ${HOME}/.ssh/id_rsa ]; then
+    echo "### Creating user keypair"
+    yes '' | ssh-keygen -t rsa -N '' > /dev/null
+fi
 
 echo "### Temporary bigger Swap to compile tesla-control with GO"
 sudo dphys-swapfile swapoff
