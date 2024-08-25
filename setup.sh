@@ -9,6 +9,30 @@ GIT_REPO_DIR=${HOME}/git
 # Fail script if any command fails
 set -e
 
+disable_service () {
+    local SERVICE_NAME=$1
+    if [ "$(systemctl is-active --quiet ${SERVICE_NAME})" -eq "0" ]; then
+        echo "### Stopping service ${SERVICE_NAME}"
+        sudo systemctl stop ${SERVICE_NAME}
+    fi
+    if [ "$(systemctl is-enabled --quiet ${SERVICE_NAME})" -eq "0" ]; then
+        echo "### Disabling service ${SERVICE_NAME}"
+        sudo systemctl disable ${SERVICE_NAME}
+    fi
+}
+
+enable_service () {
+    local SERVICE_NAME=$1
+    if [ "$(systemctl is-enabled --quiet ${SERVICE_NAME})" -ne "0" ]; then
+        echo "### Enabling service ${SERVICE_NAME}"
+        sudo systemctl enable ${SERVICE_NAME}
+    fi
+    if [ "$(systemctl is-active --quiet ${SERVICE_NAME})" -ne "0" ]; then
+        echo "### Starting service ${SERVICE_NAME}"
+        sudo systemctl start ${SERVICE_NAME}
+    fi
+}
+
 read -p "Enter Tesla VIN: " TESLA_VIN
 read -p "Enter MQTT Broker host/ip: " MQTT_BROKER
 
@@ -48,6 +72,7 @@ if [ ! -f ${HOME}/.ssh/id_rsa ]; then
     yes '' | ssh-keygen -t rsa -N '' > /dev/null
 fi
 
+enable_service dphys-swapfile.service
 echo "### Temporary bigger Swap to compile tesla-control with GO"
 sudo dphys-swapfile swapoff
 sudo tee /etc/dphys-swapfile > /dev/null <<EOT
@@ -56,17 +81,29 @@ EOT
 sudo dphys-swapfile setup
 sudo dphys-swapfile swapon
 
+if [ -d "$HOME/.local/share/go" ]; then
+    echo "### Uninstalling old GoLang"
+    sudo rm -rf $HOME/.local/share/go
+fi
+
 echo "### Installing GoLang ${GO_VERSION}"
-cd ~
+cd $HOME
 wget https://dl.google.com/go/go${GO_VERSION}.linux-${ARCH}.tar.gz
 mkdir -p $HOME/.local/share
 tar -C $HOME/.local/share -xzf go${GO_VERSION}.linux-${ARCH}.tar.gz
-echo >> "${HOME}/.bashrc"
-echo 'export GOPATH=$HOME/.local/share/go' >> "${HOME}/.bashrc"
-echo 'export PATH=$HOME/.local/share/go/bin:/home/pi/bin/tesla:$PATH' >> "${HOME}/.bashrc"
+rm -f go${GO_VERSION}.linux-${ARCH}.tar.gz
 
-source ${HOME}/.bashrc
+if [ "$(grep -i -q share/go ${HOME}/.bashrc)" -ne "0" ]; then
+    echo >> "${HOME}/.bashrc"
+    echo 'export GOPATH=$HOME/.local/share/go' >> "${HOME}/.bashrc"
+    echo 'export PATH=$HOME/.local/share/go/bin:/home/pi/bin/tesla:$PATH' >> "${HOME}/.bashrc"
+    source ${HOME}/.bashrc
+fi
 
+if [ -d "${GIT_REPO_DIR}" ]; then
+    echo "### Uninstalling ${GIT_REPO_DIR}"
+    sudo rm -rf ${GIT_REPO_DIR}
+fi
 echo "### Checkout Tesla vehicle-command project from GitHub"
 mkdir -p ${GIT_REPO_DIR}
 cd ${GIT_REPO_DIR}
@@ -79,6 +116,9 @@ mkdir -p ${TESLA_BIN_DIR}
 cp tesla-control ${TESLA_BIN_DIR}
 cd ${TESLA_BIN_DIR}
 rm -rf ${GIT_REPO_DIR}
+
+echo "### Uninstalling GoLang"
+sudo rm -rf $HOME/.local/share/go
 
 if [ ! -f private.pem ]; then
     echo "### Creating private key needed for Tesla vehicle"
@@ -98,19 +138,14 @@ TESLA_VIN=${TESLA_VIN}
 MQTT_BROKER=${MQTT_BROKER}
 TOPIC_ID=${TESLA_VIN}
 EOT
+chmod 0644 ${TESLA_BIN_DIR}/tesla-mqtt.properties
 
 echo "### Allowing tesla-control binary to access Bluetooth"
 sudo setcap 'cap_net_admin=eip' "${TESLA_BIN_DIR}/tesla-control"
 
-echo "### Disabling Swap"
-sudo systemctl stop dphys-swapfile.service
-sudo systemctl disable dphys-swapfile.service
-
-echo "### Disabling apt-daily timers"
-sudo systemctl stop apt-daily.timer
-sudo systemctl stop apt-daily-upgrade.timer
-sudo systemctl disable apt-daily.timer
-sudo systemctl disable apt-daily-upgrade.timer
+disable_service dphys-swapfile.service
+disable_service apt-daily.timer
+disable_service apt-daily-upgrade.timer
 
 echo "### Creating systemd unit file for MQTT wrapper script"
 sudo tee /lib/systemd/system/tesla-mqtt.service > /dev/null <<EOT
@@ -149,17 +184,16 @@ echo "### Setting boot partition read-only to prevent SD card failure"
 sudo awk '$2~"^/boot/firmware$" && $4~"^defaults$"{$4=$4",ro"}1' OFS="\t" /etc/fstab > /tmp/fstab
 sudo mv -f /tmp/fstab /etc/fstab
 
-echo "### Enabling systemd unit file"
-sudo systemctl enable tesla-mqtt.service
-sudo systemctl start tesla-mqtt.service
-
-echo "### Activating overlay filesystem to make SD card read-only to prevent failure"
-sudo raspi-config nonint do_overlayfs 0
+enable_service tesla-mqtt.service
 
 echo "### Doing some housekeeing now"
 sudo journalctl --vacuum-time=1s
 sudo rm -f /var/backups/*.gz
 sudo apt clean
+
+echo "### Activating overlay filesystem to make SD card read-only to prevent failure"
+sudo raspi-config nonint do_overlayfs 0
+
 history -c && history -w
 
 echo "### SUCCESS all done, rebooting in 5 seconds"
