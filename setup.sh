@@ -11,11 +11,13 @@ set -e
 
 disable_service () {
     local SERVICE_NAME=$1
-    if [ "$(systemctl is-active --quiet ${SERVICE_NAME})" -eq "0" ]; then
+    $(sudo systemctl is-active --quiet ${SERVICE_NAME})
+    if [ "$?" -eq "0" ]; then
         echo "### Stopping service ${SERVICE_NAME}"
         sudo systemctl stop ${SERVICE_NAME}
     fi
-    if [ "$(systemctl is-enabled --quiet ${SERVICE_NAME})" -eq "0" ]; then
+    $(sudo systemctl is-enabled --quiet ${SERVICE_NAME})
+    if [ "$?" -eq "0" ]; then
         echo "### Disabling service ${SERVICE_NAME}"
         sudo systemctl disable ${SERVICE_NAME}
     fi
@@ -23,11 +25,13 @@ disable_service () {
 
 enable_service () {
     local SERVICE_NAME=$1
-    if [ "$(systemctl is-enabled --quiet ${SERVICE_NAME})" -ne "0" ]; then
+    $(sudo systemctl is-enabled --quiet ${SERVICE_NAME})
+    if [ "$?" -ne "0" ]; then
         echo "### Enabling service ${SERVICE_NAME}"
         sudo systemctl enable ${SERVICE_NAME}
     fi
-    if [ "$(systemctl is-active --quiet ${SERVICE_NAME})" -ne "0" ]; then
+    $(sudo systemctl is-active --quiet ${SERVICE_NAME})
+    if [ "$?" -ne "0" ]; then
         echo "### Starting service ${SERVICE_NAME}"
         sudo systemctl start ${SERVICE_NAME}
     fi
@@ -65,7 +69,9 @@ echo "### Updating system and install needed dependencies"
 sudo apt update
 sudo apt upgrade -y
 sudo apt install mc git jq build-essential mosquitto-clients -y
-sudo apt install libavahi-compat-libdnssd-dev avahi-utils -y
+
+echo "### Disable man-db auto-update"
+sudo rm /var/lib/man-db/auto-update
 
 if [ ! -f ${HOME}/.ssh/id_rsa ]; then
     echo "### Creating user keypair"
@@ -146,6 +152,29 @@ sudo setcap 'cap_net_admin=eip' "${TESLA_BIN_DIR}/tesla-control"
 disable_service dphys-swapfile.service
 disable_service apt-daily.timer
 disable_service apt-daily-upgrade.timer
+disable_service bluetooth.service
+disable_service hciuart.service
+disable_service polkit.service
+disable_service avahi-daemon.service
+
+echo "### Removing avahi-daemon"
+sudo apt remove --purge avahi-daemon -y
+
+echo "### Removing modemmanager"
+sudo apt remove --purge modemmanager -y
+
+echo "### Removing bluez"
+sudo apt remove --purge bluez -y
+
+echo "### Removing triggerhappy"
+sudo apt remove --purge triggerhappy -y
+
+echo "### Setting minimalistic journald config"
+sudo tee /etc/systemd/journald.conf > /dev/null <<EOT
+[Journal]
+Storage=volatile
+RuntimeMaxUse=4M
+EOT
 
 echo "### Creating systemd unit file for MQTT wrapper script"
 sudo tee /lib/systemd/system/tesla-mqtt.service > /dev/null <<EOT
@@ -185,6 +214,9 @@ sudo awk '$2~"^/boot/firmware$" && $4~"^defaults$"{$4=$4",ro"}1' OFS="\t" /etc/f
 sudo mv -f /tmp/fstab /etc/fstab
 
 enable_service tesla-mqtt.service
+
+echo "### Autoremove unneeded dependencies"
+sudo apt autoremove --purge -y
 
 echo "### Doing some housekeeing now"
 sudo journalctl --vacuum-time=1s
