@@ -25,7 +25,8 @@ DISK1O=`df -h | grep 'overlayroot' | awk '{print $2}'`    # Overall
 DISK2O=`df -h | grep 'overlayroot' | awk '{print $3}'`    # Used
 DISK3O=`df -h | grep 'overlayroot' | awk '{print $4}'`    # Free
 
-if [ ${#DISK1O} -gt 0 ]; then
+grep -i overlayroot /etc/fstab &>/dev/null
+if [ "$?" -eq "0" ]; then
   DISK1=${DISK1O}
   DISK2=${DISK2O}
   DISK3=${DISK3O}

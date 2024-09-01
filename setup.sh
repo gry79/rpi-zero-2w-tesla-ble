@@ -37,6 +37,15 @@ enable_service () {
     fi
 }
 
+grep -i overlayroot /etc/fstab &>/dev/null
+if [ "$?" -eq "0" ]; then
+    echo "ERROR: Overlay read-only filesystem is active"
+    echo "       Please execute"
+    echo "       sudo raspi-config nonint do_overlayfs 1"
+    echo "       then reboot and try again"
+    exit 1
+fi
+
 read -p "Enter Tesla VIN: " TESLA_VIN
 read -p "Enter MQTT Broker host/ip: " MQTT_BROKER
 
