@@ -237,6 +237,6 @@ sudo raspi-config nonint do_overlayfs 0
 
 history -c && history -w
 
-echo "### SUCCESS all done, rebooting in 5 seconds"
-sleep 5
+echo "### SUCCESS all done, press ENTER to reboot"
+read
 sudo reboot
