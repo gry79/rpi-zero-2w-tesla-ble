@@ -6,9 +6,6 @@ ARCH=arm64
 TESLA_BIN_DIR=${HOME}/bin/tesla
 GIT_REPO_DIR=${HOME}/git
 
-# Fail script if any command fails
-set -e
-
 disable_service () {
     local SERVICE_NAME=$1
     $(sudo systemctl is-active --quiet ${SERVICE_NAME})
