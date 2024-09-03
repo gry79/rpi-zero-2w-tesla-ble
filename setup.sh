@@ -154,7 +154,7 @@ if [ ! -f public.pem ]; then
 fi
 
 echo "### Downloading MQTT wrapper script"
-do_exec curl -o ${TESLA_BIN_DIR}/tesla-mqtt.sh https://raw.githubusercontent.com/gry79/rip-zero-2w-tesla-ble/main/tesla-mqtt.sh -L
+do_exec curl -H "Cache-Control: no-cache" -o ${TESLA_BIN_DIR}/tesla-mqtt.sh https://raw.githubusercontent.com/gry79/rip-zero-2w-tesla-ble/main/tesla-mqtt.sh -L
 do_exec chmod 0755 ${TESLA_BIN_DIR}/tesla-mqtt.sh
 
 tee ${TESLA_BIN_DIR}/tesla-mqtt.properties > /dev/null <<EOT
@@ -216,7 +216,7 @@ WantedBy=multi-user.target
 EOT
 
 echo "### Installing welcome script on logon"
-do_exec sudo curl -o /etc/profile.d/xinfo.sh https://raw.githubusercontent.com/gry79/rip-zero-2w-tesla-ble/main/xinfo.sh -L
+do_exec sudo curl -H "Cache-Control: no-cache" -o /etc/profile.d/xinfo.sh https://raw.githubusercontent.com/gry79/rip-zero-2w-tesla-ble/main/xinfo.sh -L
 do_exec sudo chmod 0755 /etc/profile.d/xinfo.sh
 
 echo "### Setting up some housekeeping cron jobs to free some valuable space"
