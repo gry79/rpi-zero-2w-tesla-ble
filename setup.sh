@@ -113,13 +113,13 @@ do_exec mkdir -p $HOME/.local/share
 do_exec tar -C $HOME/.local/share -xzf go${GO_VERSION}.linux-${ARCH}.tar.gz
 do_exec rm -f go${GO_VERSION}.linux-${ARCH}.tar.gz
 
-$(grep -i -q share/go ${HOME}/.bashrc)
+grep -i -q share/go ${HOME}/.bashrc
 if [ "$?" -ne "0" ]; then
     echo >> "${HOME}/.bashrc"
     echo 'export GOPATH=$HOME/.local/share/go' >> "${HOME}/.bashrc"
     echo 'export PATH=$HOME/.local/share/go/bin:/home/pi/bin/tesla:$PATH' >> "${HOME}/.bashrc"
-    source ${HOME}/.bashrc
 fi
+source ${HOME}/.bashrc
 
 if [ -d "${GIT_REPO_DIR}" ]; then
     echo "### Uninstalling ${GIT_REPO_DIR}"
