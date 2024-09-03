@@ -238,14 +238,13 @@ enable_service tesla-mqtt.service
 echo "### Autoremove unneeded dependencies"
 do_exec sudo apt autoremove --purge -y
 
+echo "### Activating overlay filesystem to make SD card read-only to prevent failure"
+do_exec sudo raspi-config nonint do_overlayfs 0
+
 echo "### Doing some housekeeing now"
 do_exec sudo journalctl --vacuum-time=1s
 do_exec sudo rm -f /var/backups/*.gz
 do_exec sudo apt clean
-
-echo "### Activating overlay filesystem to make SD card read-only to prevent failure"
-do_exec sudo raspi-config nonint do_overlayfs 0
-
 do_exec history -c && history -w
 
 echo "### SUCCESS all done, press ENTER to reboot"
