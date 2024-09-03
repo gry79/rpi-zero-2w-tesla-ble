@@ -84,8 +84,10 @@ do_exec sudo apt update
 do_exec sudo apt upgrade -y
 do_exec sudo apt install mc git jq build-essential mosquitto-clients -y
 
-echo "### Disable man-db auto-update"
-do_exec sudo rm /var/lib/man-db/auto-update
+if [ -f /var/lib/man-db/auto-update ]; then
+    echo "### Disable man-db auto-update"
+    do_exec sudo rm /var/lib/man-db/auto-update
+fi
 
 if [ ! -f ${HOME}/.ssh/id_rsa ]; then
     echo "### Creating user keypair"
