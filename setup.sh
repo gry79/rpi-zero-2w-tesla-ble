@@ -51,15 +51,8 @@ if [ "$?" -eq "0" ]; then
     exit 1
 fi
 
-read -p "Enter Tesla VIN: " TESLA_VIN
 read -p "Enter MQTT Broker host/ip: " MQTT_BROKER
 
-if [ "${#TESLA_VIN}" -ne "17" ]; then
-    echo "ERROR: Invalid VIN, must be 17 characters long"
-    exit 1
-fi
-
-echo "Tesla VIN is ${TESLA_VIN}"
 echo "MQTT Broker is ${MQTT_BROKER}"
 read -p "Is this correct? [y/n] " YES_NO
 
@@ -158,9 +151,7 @@ curl -H "Cache-Control: no-cache" -o ${TESLA_BIN_DIR}/tesla-mqtt.sh https://raw.
 do_exec chmod 0755 ${TESLA_BIN_DIR}/tesla-mqtt.sh
 
 tee ${TESLA_BIN_DIR}/tesla-mqtt.properties > /dev/null <<EOT
-TESLA_VIN=${TESLA_VIN}
 MQTT_BROKER=${MQTT_BROKER}
-TOPIC_ID=${TESLA_VIN}
 EOT
 do_exec chmod 0644 ${TESLA_BIN_DIR}/tesla-mqtt.properties
 
