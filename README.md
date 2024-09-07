@@ -84,6 +84,8 @@ The following message will appear, press "Confirm" to finish the pairing process
 
 That's it, you can now send all other commands to your Tesla. Try the `body-controller-state` command to test it.
 
+I don't need to mention that the Raspi Zero always needs to be in BLE range to the vehicle, right?
+
 ## Configuration
 
 Configuration file is placed in `/home/pi/bin/tesla/tesla-mqtt.properties`, there is only one config parameter
