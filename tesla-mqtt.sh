@@ -1,14 +1,24 @@
 #!/usr/bin/env bash
 
 trap ctrl_c INT
+trap on_exit EXIT
 
 TESLA_BIN_DIR=/home/pi/bin/tesla
 
 source ${TESLA_BIN_DIR}/tesla-mqtt.properties
 
-function ctrl_c() {
+function ctrl_c () {
     echo "Exiting!"
     exit 0
+}
+
+function on_exit () {
+    mosquitto_pub -h "${MQTT_BROKER}" -t "tesla/info" -m "{ \
+    \"online\": \"false\", \
+    \"ip\": \"$(ifconfig wlan0 2>/dev/null | grep "inet " | awk '{print $2}')\", \
+    \"hostname\": \"$(hostname -f)\", \"model\":\"$(tr -d '\0' </proc/device-tree/model)\", \
+    \"uptime\": \"$(uptime -p)\" \
+    }"
 }
 
 echo "MQTT Broker: ${MQTT_BROKER}"
@@ -24,6 +34,7 @@ THROTTLING_OCCURED=$([[ "$(($((16#${VC:12})) & 262144))" -eq "0" ]] && echo "no"
 SOFT_TEMPERATURE_LIMIT_OCCURED=$([[ "$(($((16#${VC:12})) & 524288))" -eq "0" ]] && echo "no" || echo "yes")
 
 mosquitto_pub -h "${MQTT_BROKER}" -t "tesla/info" -m "{ \
+    \"online\": \"true\", \
     \"ip\": \"$(ifconfig wlan0 2>/dev/null | grep "inet " | awk '{print $2}')\", \
     \"hostname\": \"$(hostname -f)\", \"model\":\"$(tr -d '\0' </proc/device-tree/model)\", \
     \"undervoltage_detected\": \"${UNDERVOLTAGE_DETECTED}\", \
@@ -58,6 +69,7 @@ while true; do
                 if [ ! -f "${TESLA_BIN_DIR}/${TESLA_VIN}.private.pem" ]; then
                     echo "Generating private key ${TESLA_VIN}.private.pem"
                     openssl ecparam -genkey -name prime256v1 -noout > "${TESLA_BIN_DIR}/${TESLA_VIN}.private.pem"
+                    chmod 0640 "${TESLA_BIN_DIR}/${TESLA_VIN}.private.pem"
                 fi
                 if [ ! -f "${TESLA_BIN_DIR}/${TESLA_VIN}.public.pem" ]; then
                     echo "Generating public key ${TESLA_VIN}.public.pem"
