@@ -211,10 +211,6 @@ EOT
 do_exec crontab /tmp/c1
 do_exec rm -f /tmp/c1
 
-#echo "### Setting boot partition read-only to prevent SD card failure"
-#sudo awk '$2~"^/boot/firmware$" && $4~"^defaults$"{$4=$4",ro"}1' OFS="\t" /etc/fstab > /tmp/fstab
-#sudo mv -f /tmp/fstab /etc/fstab
-
 enable_service tesla-mqtt.service
 
 echo "### Autoremove unneeded dependencies"
