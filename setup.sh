@@ -137,17 +137,8 @@ do_exec rm -rf ${GIT_REPO_DIR}
 echo "### Uninstalling GoLang"
 do_exec sudo rm -rf $HOME/.local/share/go
 
-if [ ! -f private.pem ]; then
-    echo "### Creating private key needed for Tesla vehicle"
-    do_exec openssl ecparam -genkey -name prime256v1 -noout > private.pem
-fi
-if [ ! -f public.pem ]; then
-    echo "### Creating public key needed for Tesla vehicle"
-    do_exec openssl ec -in private.pem -pubout > public.pem
-fi
-
 echo "### Downloading MQTT wrapper script"
-curl -H "Cache-Control: no-cache" -o ${TESLA_BIN_DIR}/tesla-mqtt.sh https://raw.githubusercontent.com/gry79/rip-zero-2w-tesla-ble/main/tesla-mqtt.sh -L
+curl -o ${TESLA_BIN_DIR}/tesla-mqtt.sh https://raw.githubusercontent.com/gry79/rip-zero-2w-tesla-ble/main/tesla-mqtt.sh
 do_exec chmod 0755 ${TESLA_BIN_DIR}/tesla-mqtt.sh
 
 tee ${TESLA_BIN_DIR}/tesla-mqtt.properties > /dev/null <<EOT
@@ -207,7 +198,7 @@ WantedBy=multi-user.target
 EOT
 
 echo "### Installing welcome script on logon"
-sudo curl -H "Cache-Control: no-cache" -o /etc/profile.d/xinfo.sh https://raw.githubusercontent.com/gry79/rip-zero-2w-tesla-ble/main/xinfo.sh -L
+sudo curl -o /etc/profile.d/xinfo.sh https://raw.githubusercontent.com/gry79/rip-zero-2w-tesla-ble/main/xinfo.sh
 do_exec sudo chmod 0755 /etc/profile.d/xinfo.sh
 
 echo "### Setting up some housekeeping cron jobs to free some valuable space"
