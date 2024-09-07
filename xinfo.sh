@@ -3,27 +3,27 @@
 MODEL=$(tr -d '\0' </proc/device-tree/model)
 
 # Date & Time
-DATE=`date +"%A, %e %B %Y"`
+DATE=$(date +"%A, %e %B %Y")
 
 # Hostname
-HOSTNAME=`hostname -f`
+HOSTNAME=$(hostname -f)
 
 # System usage
-LOAD1=`cat /proc/loadavg | awk '{print $1}'`    # Last minute
-LOAD2=`cat /proc/loadavg | awk '{print $2}'`    # Last 5 minutes
-LOAD3=`cat /proc/loadavg | awk '{print $3}'`    # Last 15 minutes
+LOAD1=$(cat /proc/loadavg | awk '{print $1}')    # Last minute
+LOAD2=$(cat /proc/loadavg | awk '{print $2}')    # Last 5 minutes
+LOAD3=$(cat /proc/loadavg | awk '{print $3}')    # Last 15 minutes
 
 # Temperature
-TEMP=`vcgencmd measure_temp | cut -c "6-9"`
+TEMP=$(vcgencmd measure_temp | cut -c "6-9")
 
 # Disk usage
-DISK1N=`df -h | grep '/dev/mmcblk0p2' | awk '{print $2}'`    # Overall
-DISK2N=`df -h | grep '/dev/mmcblk0p2' | awk '{print $3}'`    # Used
-DISK3N=`df -h | grep '/dev/mmcblk0p2' | awk '{print $4}'`    # Free
+DISK1N=$(df -h | grep '/dev/mmcblk0p2' | awk '{print $2}')    # Overall
+DISK2N=$(df -h | grep '/dev/mmcblk0p2' | awk '{print $3}')    # Used
+DISK3N=$(df -h | grep '/dev/mmcblk0p2' | awk '{print $4}')    # Free
 
-DISK1O=`df -h | grep 'overlayroot' | awk '{print $2}'`    # Overall
-DISK2O=`df -h | grep 'overlayroot' | awk '{print $3}'`    # Used
-DISK3O=`df -h | grep 'overlayroot' | awk '{print $4}'`    # Free
+DISK1O=$(df -h | grep 'overlayroot' | awk '{print $2}')    # Overall
+DISK2O=$(df -h | grep 'overlayroot' | awk '{print $3}')    # Used
+DISK3O=$(df -h | grep 'overlayroot' | awk '{print $4}')    # Free
 
 grep -i overlayroot /etc/fstab &>/dev/null
 if [ "$?" -eq "0" ]; then
@@ -37,13 +37,13 @@ else
 fi
 
 # Memory
-RAM1=`free -h -w | grep 'Mem' | awk '{print $2}'`    # Total
-RAM2=`free -h -w | grep 'Mem' | awk '{print $3}'`    # Used
-RAM3=`free -h -w | grep 'Mem' | awk '{print $4}'`    # Free
-RAM4=`free -h -w | grep 'Swap' | awk '{print $3}'`   # Swap used
+RAM1=$(free -h -w | grep 'Mem' | awk '{print $2}')    # Total
+RAM2=$(free -h -w | grep 'Mem' | awk '{print $3}')    # Used
+RAM3=$(free -h -w | grep 'Mem' | awk '{print $4}')    # Free
+RAM4=$(free -h -w | grep 'Swap' | awk '{print $3}')   # Swap used
 
 # Get IP of WiFi
-WLAN_IP=`ifconfig wlan0 2>/dev/null | grep "inet " | awk '{print $2}'`
+WLAN_IP=$(ifconfig 2>/dev/null | grep "inet.*broadcast" | awk '{print $2}')
 
 # Current CPU frequency
 CPU_FREQ_MHZ=$(($(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq) / 1000))
