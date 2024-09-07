@@ -51,7 +51,7 @@ while true; do
         echo "Tesla VIN: ${TESLA_VIN}"
         if [ "${#TESLA_VIN}" -ne "17" ]; then
             STATUS="ERROR"
-            RESPONSE="Invalid VIN ${TESLA_VIN}, must be 17 characters long"
+            RESPONSE="\"Invalid VIN ${TESLA_VIN}, must be 17 characters long\""
             echo "${STATUS}: ${RESPONSE}"
         else
             if [ "${PAYLOAD}" = "add-key-request" ]; then
@@ -85,7 +85,7 @@ while true; do
                     fi
                 else
                     STATUS="ERROR"
-                    RESPONSE="No private key found for VIN ${TESLA_VIN}, please execute 'add-key-request' first"
+                    RESPONSE="\"No private key found for VIN ${TESLA_VIN}, please execute 'add-key-request' first\""
                 fi
             fi
         fi
