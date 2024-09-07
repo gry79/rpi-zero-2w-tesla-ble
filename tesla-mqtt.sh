@@ -55,25 +55,38 @@ while true; do
             echo "${STATUS}: ${RESPONSE}"
         else
             if [ "${PAYLOAD}" = "add-key-request" ]; then
+                if [ ! -f "${TESLA_BIN_DIR}/${TESLA_VIN}.private.pem" ]; then
+                    echo "Generating private key ${TESLA_VIN}.private.pem"
+                    openssl ecparam -genkey -name prime256v1 -noout > "${TESLA_BIN_DIR}/${TESLA_VIN}.private.pem"
+                fi
+                if [ ! -f "${TESLA_BIN_DIR}/${TESLA_VIN}.public.pem" ]; then
+                    echo "Generating public key ${TESLA_VIN}.public.pem"
+                    openssl ec -in "${TESLA_BIN_DIR}/${TESLA_VIN}.private.pem" -pubout > "${TESLA_BIN_DIR}/${TESLA_VIN}.public.pem"
+                fi
                 RESPONSE=$(${TESLA_BIN_DIR}/tesla-control -vin ${TESLA_VIN} -ble add-key-request \
-                    ${TESLA_BIN_DIR}/public.pem owner cloud_key 2>&1)
+                    "${TESLA_BIN_DIR}/${TESLA_VIN}.public.pem" owner cloud_key 2>&1)
                 RES=$?
             else
-                RESPONSE=$(${TESLA_BIN_DIR}/tesla-control -vin ${TESLA_VIN} -ble -key-name private.pem \
-                    -key-file ${TESLA_BIN_DIR}/private.pem ${PAYLOAD} 2>&1)
-                RES=$?
-            fi
-            if [ "${#RESPONSE}" -eq "0" ]; then
-                RESPONSE="\"\""
-            fi
-            jq -e . >/dev/null 2>&1 <<< "${RESPONSE}"
-            if [ "$?" -ne "0" ]; then
-                RESPONSE=\"${RESPONSE}\"
-            fi
-            if [ $RES -eq 0 ]; then
-                STATUS="OK"
-            else
-                STATUS="ERROR"
+                if [ -f "${TESLA_BIN_DIR}/${TESLA_VIN}.private.pem" ]; then
+                    RESPONSE=$(${TESLA_BIN_DIR}/tesla-control -vin ${TESLA_VIN} -ble \
+                        -key-file "${TESLA_BIN_DIR}/${TESLA_VIN}.private.pem" ${PAYLOAD} 2>&1)
+                    RES=$?
+                    if [ "${#RESPONSE}" -eq "0" ]; then
+                        RESPONSE="\"\""
+                    fi
+                    jq -e . >/dev/null 2>&1 <<< "${RESPONSE}"
+                    if [ "$?" -ne "0" ]; then
+                        RESPONSE=\"${RESPONSE}\"
+                    fi
+                    if [ $RES -eq 0 ]; then
+                        STATUS="OK"
+                    else
+                        STATUS="ERROR"
+                    fi
+                else
+                    STATUS="ERROR"
+                    RESPONSE="No private key found for VIN ${TESLA_VIN}, please execute 'add-key-request' first"
+                fi
             fi
         fi
         echo "${STATUS} command: ${PAYLOAD}"
