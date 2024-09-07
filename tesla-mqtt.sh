@@ -15,11 +15,16 @@ function ctrl_c () {
 function on_exit () {
     mosquitto_pub -h "${MQTT_BROKER}" -t "tesla/info" -m "{ \
     \"online\": \"false\", \
-    \"ip\": \"$(ifconfig wlan0 2>/dev/null | grep "inet " | awk '{print $2}')\", \
+    \"ip\": \"$(ifconfig 2>/dev/null | grep "inet.*broadcast" | awk '{print $2}')\", \
     \"hostname\": \"$(hostname -f)\", \"model\":\"$(tr -d '\0' </proc/device-tree/model)\", \
     \"uptime\": \"$(uptime -p)\" \
     }"
 }
+
+echo "----------------------------"
+echo "-- Tesla Command BLE MQTT --"
+echo "----------------------------"
+echo
 
 echo "MQTT Broker: ${MQTT_BROKER}"
 
@@ -35,7 +40,7 @@ SOFT_TEMPERATURE_LIMIT_OCCURED=$([[ "$(($((16#${VC:12})) & 524288))" -eq "0" ]] 
 
 mosquitto_pub -h "${MQTT_BROKER}" -t "tesla/info" -m "{ \
     \"online\": \"true\", \
-    \"ip\": \"$(ifconfig wlan0 2>/dev/null | grep "inet " | awk '{print $2}')\", \
+    \"ip\": \"$(ifconfig 2>/dev/null | grep "inet.*broadcast" | awk '{print $2}')\", \
     \"hostname\": \"$(hostname -f)\", \"model\":\"$(tr -d '\0' </proc/device-tree/model)\", \
     \"undervoltage_detected\": \"${UNDERVOLTAGE_DETECTED}\", \
     \"arm_frequency_capped\": \"${ARM_FREQUENCY_CAPPED}\", \
