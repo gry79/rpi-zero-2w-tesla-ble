@@ -128,6 +128,7 @@ do_exec git clone https://github.com/teslamotors/vehicle-command.git
 
 echo "### Compiling tesla-control"
 cd ${GIT_REPO_DIR}/vehicle-command/cmd/tesla-control
+do_exec go get
 do_exec go build
 do_exec mkdir -p ${TESLA_BIN_DIR}
 do_exec cp tesla-control ${TESLA_BIN_DIR}
