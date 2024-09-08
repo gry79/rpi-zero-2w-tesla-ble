@@ -19,29 +19,33 @@ But there is much more you can do than just "waking" the vehicle.
 Features:
 * Controllable via MQTT
 * Add Pi Zero 2 W as Tesla Key
-* Wake vehicle
-* Lock vehicle
-* Unlock vehicle
-* Remote start vehicle
-* Turn on climate control
-* Turn off climate control
-* Honk horn
-* Flash lights
-* Start charging
-* Stop charging
-* Open Cybertruck tonneau
-* Close Cybertruck tonneau
-* Stop moving Cybertruck tonneau
-* Open vehicle trunk. Note that trunk-close only works on certain vehicle types
-* Toggle trunk open/closed. Closing is only available on certain vehicle types
-* Closes vehicle trunk. Only available on certain vehicle types
-* Open vehicle frunk. Note that there's no frunk-close command
-* Open charge port
-* Close charge port
-* Close falcon-wing doors and lock vehicle. Model X only
-* Vent all windows
-* Close all windows
-* Fetch limited vehicle state information. Works over BLE when infotainment is asleep
+
+Commands:
+* **add-key-request**: Request NFC-card approval for a enrolling "public key" with role "owner" and form factor "cloud key"
+* **wake**: Wake vehicle
+* **lock**: Lock vehicle
+* **unlock**: Unlock vehicle
+* **drive**: Remote start vehicle
+* **climate-on**: Turn on climate control
+* **climate-off**: Turn off climate control
+* **honk**: Honk horn
+* **ping**: Ping vehicle
+* **flash-lights**: Flash lights
+* **charging-start**: Start charging
+* **charging-stop**: Stop charging
+* **tonneau-open**: Open Cybertruck tonneau
+* **tonneau-close**: Close Cybertruck tonneau
+* **tonneau-stop**: Stop moving Cybertruck tonneau
+* **trunk-open**: Open vehicle trunk. Note that trunk-close only works on certain vehicle types
+* **trunk-move**: Toggle trunk open/closed. Closing is only available on certain vehicle types
+* **trunk-close**: Closes vehicle trunk. Only available on certain vehicle types
+* **frunk-open**: Open vehicle frunk. Note that there's no frunk-close command
+* **charge-port-open**: Open charge port
+* **charge-port-close**: Close charge port
+* **autosecure-modelx**: Close falcon-wing doors and lock vehicle. Model X only
+* **windows-vent**: Vent all windows
+* **windows-close**: Close all windows
+* **body-controller-state**: Fetch limited vehicle state information. Works over BLE when infotainment is asleep
 
 After the successfull installation, the script will put your SD card partitions in read-only mode and activate an overlay filesystem.  
 This means that there will be no write access to your SD card during normal operation which will not wear your SD card and should enable years of smooth operation.
