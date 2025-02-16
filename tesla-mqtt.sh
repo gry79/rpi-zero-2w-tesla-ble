@@ -4,6 +4,7 @@ trap ctrl_c INT
 trap on_exit EXIT
 
 TESLA_BIN_DIR=/home/pi/bin/tesla
+MEIDA_ROOT=/media/root-ro
 
 source ${TESLA_BIN_DIR}/tesla-mqtt.properties
 
@@ -67,18 +68,28 @@ while true; do
         echo "Tesla VIN: ${TESLA_VIN}"
         if [ "${#TESLA_VIN}" -ne "17" ]; then
             STATUS="ERROR"
-            RESPONSE="\"Invalid VIN ${TESLA_VIN}, must be 17 characters long\""
+            RESPONSE="Invalid VIN ${TESLA_VIN}, must be 17 characters long"
             echo "${STATUS}: ${RESPONSE}"
         else
             if [ "${PAYLOAD}" = "add-key-request" ]; then
-                if [ ! -f "${TESLA_BIN_DIR}/${TESLA_VIN}.private.pem" ]; then
-                    echo "Generating private key ${TESLA_VIN}.private.pem"
-                    openssl ecparam -genkey -name prime256v1 -noout > "${TESLA_BIN_DIR}/${TESLA_VIN}.private.pem"
-                    chmod 0640 "${TESLA_BIN_DIR}/${TESLA_VIN}.private.pem"
+                KEY_PATH=${TESLA_BIN_DIR}/${TESLA_VIN}
+                grep -i overlayroot /etc/fstab &>/dev/null
+                if [ "$?" -eq "0" ]; then
+                    KEY_PATH=${MEIDA_ROOT}${TESLA_BIN_DIR}/${TESLA_VIN}
+                    sudo mount -o remount,rw ${MEIDA_ROOT}
                 fi
-                if [ ! -f "${TESLA_BIN_DIR}/${TESLA_VIN}.public.pem" ]; then
+                if [ ! -f "${KEY_PATH}.private.pem" ]; then
+                    echo "Generating private key ${TESLA_VIN}.private.pem"
+                    openssl ecparam -genkey -name prime256v1 -noout > "${KEY_PATH}.private.pem"
+                    chmod 0640 "${KEY_PATH}.private.pem"
+                fi
+                if [ ! -f "${KEY_PATH}.public.pem" ]; then
                     echo "Generating public key ${TESLA_VIN}.public.pem"
-                    openssl ec -in "${TESLA_BIN_DIR}/${TESLA_VIN}.private.pem" -pubout > "${TESLA_BIN_DIR}/${TESLA_VIN}.public.pem"
+                    openssl ec -in "${KEY_PATH}.private.pem" -pubout > "${KEY_PATH}.public.pem"
+                fi
+                grep -i overlayroot /etc/fstab &>/dev/null
+                if [ "$?" -eq "0" ]; then
+                    sudo mount -o remount,ro ${MEIDA_ROOT}
                 fi
                 RESPONSE=$(${TESLA_BIN_DIR}/tesla-control -vin ${TESLA_VIN} -ble add-key-request \
                     "${TESLA_BIN_DIR}/${TESLA_VIN}.public.pem" owner cloud_key 2>&1)
@@ -88,13 +99,6 @@ while true; do
                     RESPONSE=$(${TESLA_BIN_DIR}/tesla-control -vin ${TESLA_VIN} -ble \
                         -key-file "${TESLA_BIN_DIR}/${TESLA_VIN}.private.pem" ${PAYLOAD} 2>&1)
                     RES=$?
-                    if [ "${#RESPONSE}" -eq "0" ]; then
-                        RESPONSE="\"\""
-                    fi
-                    jq -e . >/dev/null 2>&1 <<< "${RESPONSE}"
-                    if [ "$?" -ne "0" ]; then
-                        RESPONSE=\"${RESPONSE}\"
-                    fi
                     if [ $RES -eq 0 ]; then
                         STATUS="OK"
                     else
@@ -102,12 +106,18 @@ while true; do
                     fi
                 else
                     STATUS="ERROR"
-                    RESPONSE="\"No private key found for VIN ${TESLA_VIN}, please execute 'add-key-request' first\""
+                    RESPONSE="No private key found for VIN ${TESLA_VIN}, please execute 'add-key-request' first"
                 fi
             fi
         fi
         echo "${STATUS} command: ${PAYLOAD}"
-        #echo "Response: ${RESPONSE}"
+        if [ "${#RESPONSE}" -eq "0" ]; then
+            RESPONSE="\"\""
+        fi
+        jq -e . >/dev/null 2>&1 <<< "${RESPONSE}"
+        if [ "$?" -ne "0" ]; then
+            RESPONSE=\"${RESPONSE}\"
+        fi
         mosquitto_pub -h "${MQTT_BROKER}" -t "tesla/${TESLA_VIN}/response" -m "{ \
             \"status\": \"${STATUS}\", \"vin\": \"${TESLA_VIN}\", \
             \"uptime\": \"$(uptime -p)\", \"response\": ${RESPONSE} \
