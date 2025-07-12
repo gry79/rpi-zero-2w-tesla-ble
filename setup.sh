@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-GO_VERSION=1.24.3
+GO_VERSION=1.24.5
 ARCH=arm64
 
 TESLA_BIN_DIR=${HOME}/bin/tesla
@@ -74,7 +74,7 @@ export LANGUAGE=en_GB.UTF-8
 
 echo "### Updating system and install needed dependencies"
 do_exec sudo apt update
-do_exec sudo apt upgrade -y
+do_exec sudo apt full-upgrade -y
 do_exec sudo apt install mc git jq build-essential mosquitto-clients -y
 
 if [ -f /var/lib/man-db/auto-update ]; then
@@ -88,7 +88,7 @@ if [ ! -f ${HOME}/.ssh/id_rsa ]; then
 fi
 
 enable_service dphys-swapfile.service
-echo "### Temporary bigger Swap to compile tesla-control with GO"
+echo "### Temporary bigger Swap to compile tesla-control with GoLang"
 do_exec sudo dphys-swapfile swapoff
 sudo tee /etc/dphys-swapfile > /dev/null <<EOT
 CONF_SWAPSIZE=2048
