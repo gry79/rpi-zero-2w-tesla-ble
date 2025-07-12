@@ -47,6 +47,7 @@ if [ "$?" -eq "0" ]; then
     echo "ERROR: Overlay read-only filesystem is active"
     echo "       Please execute"
     echo "       sudo raspi-config nonint do_overlayfs 1"
+    echo "       sudo mount -o remount,rw /boot/firmware"
     echo "       then reboot and try again"
     exit 1
 fi
