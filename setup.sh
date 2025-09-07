@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-GO_VERSION=1.24.5
+GO_VERSION=1.25.1
 ARCH=arm64
 
 TESLA_BIN_DIR=${HOME}/bin/tesla
